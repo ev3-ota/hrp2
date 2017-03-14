@@ -90,6 +90,10 @@ void main_task(intptr_t unused) {
 			// 停止
 			ev3_motor_stop( left_motor, true ); // ブレーキモード
 			ev3_motor_stop( right_motor, true );
+			
+			// 操舵
+			ev3_motor_reset_counts( front_motor );
+			ev3_motor_rotate( front_motor, -50, 50, true );
 		
 		}
 		else {						// 走行状態0
