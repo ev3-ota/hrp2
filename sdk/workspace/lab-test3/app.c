@@ -79,7 +79,13 @@ void main_task(intptr_t unused) {
 		/*------------------------*/
 		/* 車両状態別自動運転制御 */
 		/*------------------------*/
-		if ( sonar_alert() == 2 ) {	// 走行状態1
+		if ( sonar_alert() == 1 ) { 		// 走行状態1 速度ダウン
+			// 減速
+			ev3_motor_set_power( left_motor, -40 );
+			ev3_motor_set_power( right_motor, -40 );
+
+		}
+		else if ( sonar_alert() == 2 ) {	// 走行状態2 停止
 			
 			// 停止
 			ev3_motor_stop( left_motor, true ); // ブレーキモード
