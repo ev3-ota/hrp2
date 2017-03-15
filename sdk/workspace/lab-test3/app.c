@@ -82,6 +82,7 @@ void main_task(intptr_t unused) {
 	/* メインタスク */
 	Back_Mode = 0;
 	Back_Init = 1;
+	G_Distance = 0;
 	while ( 1 ) {
 		
 		/*------------------------*/
@@ -157,8 +158,8 @@ void main_task(intptr_t unused) {
 		}
 		
 		// 画面表示
-		sprintf( buff_val, "Distance：%d ", G_Distance );
-		ev3_lcd_draw_string( buff_val, 0, 10 );
+		//sprintf( buff_val, "Distance：%d ", G_Distance );
+		//ev3_lcd_draw_string( buff_val, 0, 10 );
 	}
 }
 
@@ -171,8 +172,8 @@ static int sonar_alert(void)
 {
     static int alert = 0;
     signed int distance;
-
-    distance = ev3_ultrasonic_sensor_get_distance( sonar_sensorF );
+	
+	distance = ev3_ultrasonic_sensor_get_distance( sonar_sensorF );
 	G_Distance = distance;
 
 	if ( distance == 0 ) { // 初期状態の調整
@@ -180,7 +181,7 @@ static int sonar_alert(void)
 	}
     else if ( distance < SONAR_ALERT_DISTANCE1 ) {
 		alert = 1; // 障害物を検知
-		if ( ( distance < SONAR_ALERT_DISTANCE2 ) ) {
+		if ( distance < SONAR_ALERT_DISTANCE2 ) {
 			alert = 2; // 障害物を検知
 		}
     }
