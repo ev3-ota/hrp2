@@ -79,13 +79,18 @@ void main_task(intptr_t unused) {
 		/*------------------------*/
 		/* 車両状態別自動運転制御 */
 		/*------------------------*/
-		if ( sonar_alert() == 1 ) { 		// 走行状態1 速度ダウン
+		if ( sonar_alert() == 1 ) { 		// 減速
+			// LED：オレンジ
+			ev3_led_set_color( LED_ORANGE );
+
 			// 減速
 			ev3_motor_set_power( left_motor, -40 );
 			ev3_motor_set_power( right_motor, -40 );
 
 		}
-		else if ( sonar_alert() == 2 ) {	// 走行状態2 停止
+		else if ( sonar_alert() == 2 ) {	// 停止
+			// LED：赤
+			ev3_led_set_color( LED_RED );
 			
 			// 停止
 			ev3_motor_stop( left_motor, true ); // ブレーキモード
@@ -96,7 +101,10 @@ void main_task(intptr_t unused) {
 			ev3_motor_rotate( front_motor, -50, 50, true );
 		
 		}
-		else {						// 走行状態0
+		else {								// 通常走行
+			// LED：緑
+			ev3_led_set_color( LED_GREEN );
+			
 			// 自動走行 前進 POWER 100%
 			ev3_motor_set_power( left_motor, -100 ); 
 	    	ev3_motor_set_power( right_motor, -100 );
@@ -116,12 +124,15 @@ static int sonar_alert(void)
 
     distance = ev3_ultrasonic_sensor_get_distance( sonar_sensorF );
 
-    if ( ( distance < SONAR_ALERT_DISTANCE1 ) && ( distance >= SONAR_ALERT_DISTANCE2 ) ) {
+	if ( distance == 0 ) { // 初期状態の調整
+		alert = 0;
+	}
+    else if ( distance < SONAR_ALERT_DISTANCE1 ) {
 		alert = 1; // 障害物を検知
-	}
-	else if ( ( distance < SONAR_ALERT_DISTANCE2 ) && ( distance >= 0 ) ) {
-		alert = 2; // 障害物を検知
-	}
+		if ( ( distance < SONAR_ALERT_DISTANCE2 ) ) {
+			alert = 2; // 障害物を検知
+		}
+    }
 	else{
 		alert = 0; // 障害物無し
 	}
