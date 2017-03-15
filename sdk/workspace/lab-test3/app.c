@@ -37,6 +37,7 @@ static const motor_port_t
 #define SONAR_ALERT_DISTANCE2 30	/* 超音波センサによる障害物検知距離[cm] レベル2 停止 */
 
 static int Global_Count;
+static int G_Distance;
 
 /* 関数プロトタイプ宣言 */
 static int sonar_alert(void);
@@ -48,7 +49,7 @@ static int sonar_alert(void);
 //*****************************************************************************
 void Counter_1000cyc(intptr_t  unused) {
 
-		Global_Count++;
+	Global_Count = Global_Count + 1;
 }
 
 //*****************************************************************************
@@ -59,6 +60,11 @@ void Counter_1000cyc(intptr_t  unused) {
 
 void main_task(intptr_t unused) {
 
+	int Back_Mode; // バックモード
+	int Back_Init; // バックモード初期処理
+
+	char buff_val[30];
+	
 	/* センサーポートの設定 */
 	ev3_sensor_config( sonar_sensorF,ULTRASONIC_SENSOR );
 	ev3_sensor_config( sonar_sensorB,ULTRASONIC_SENSOR );
@@ -74,41 +80,85 @@ void main_task(intptr_t unused) {
 	ev3_motor_reset_counts( front_motor );
 
 	/* メインタスク */
+	Back_Mode = 0;
+	Back_Init = 1;
 	while ( 1 ) {
 		
 		/*------------------------*/
 		/* 車両状態別自動運転制御 */
 		/*------------------------*/
-		if ( sonar_alert() == 1 ) { 		// 減速
-			// LED：オレンジ
-			ev3_led_set_color( LED_ORANGE );
+		if ( Back_Mode == 0 ) {				// 前進モード ---------->
+			
+			if ( sonar_alert() == 1 ) { 	// 減速
+				// LED：オレンジ
+				ev3_led_set_color( LED_ORANGE );
 
-			// 減速
-			ev3_motor_set_power( left_motor, -40 );
-			ev3_motor_set_power( right_motor, -40 );
-
+				// 減速
+				ev3_motor_set_power( left_motor, -40 );
+				ev3_motor_set_power( right_motor, -40 );
+			}
+			else if ( sonar_alert() == 2 ) {// 停止
+				// LED：赤
+				ev3_led_set_color( LED_RED );
+			
+				// 停止
+				ev3_motor_stop( left_motor, true ); // ブレーキモード
+				ev3_motor_stop( right_motor, true );
+				
+				// 操舵
+				ev3_motor_reset_counts( front_motor );
+				ev3_motor_rotate( front_motor, -50, 50, true );
+				
+				// バックモード移行
+				Back_Mode = 1; // バックモード移行
+				Back_Init = 1;				
+			}
+			else {							// 通常走行
+				// LED：緑
+				ev3_led_set_color( LED_GREEN );
+				
+				// 自動走行 前進 POWER 100%
+				ev3_motor_set_power( left_motor, -100 ); 
+	    		ev3_motor_set_power( right_motor, -100 );
+			}
 		}
-		else if ( sonar_alert() == 2 ) {	// 停止
-			// LED：赤
-			ev3_led_set_color( LED_RED );
+		else {								// バックモード -------->
+			// バックモード初期処理
+			if ( Back_Init == 1 ) {
+				// 周期ハンドラ起動
+				Global_Count = 0;
+				ev3_sta_cyc( COUNT_CYC1 );
+				
+				// 初期処理終了
+				Back_Init = 0;
+			}
 			
-			// 停止
-			ev3_motor_stop( left_motor, true ); // ブレーキモード
-			ev3_motor_stop( right_motor, true );
+			// バックモード実行
+			ev3_motor_set_power( left_motor, 20 );
+			ev3_motor_set_power( right_motor, 20 );
 			
-			// 操舵
-			ev3_motor_reset_counts( front_motor );
-			ev3_motor_rotate( front_motor, -50, 50, true );
+			// バックモード開始後、約2秒後に自動停止、操舵後前進モードへ移行
+			if ( Global_Count > 2 ) {
+				
+				// 停止
+				ev3_motor_stop( left_motor, true ); // ブレーキモード
+				ev3_motor_stop( right_motor, true );
+
+				// 操舵
+				ev3_motor_reset_counts( front_motor );
+				ev3_motor_rotate( front_motor, 50, 50, true );
+				
+				// 周期ハンドラ停止
+				ev3_stp_cyc( COUNT_CYC1 );
+				
+				// 前進モード移行
+				Back_Mode = 0;
+			}
+		}
 		
-		}
-		else {								// 通常走行
-			// LED：緑
-			ev3_led_set_color( LED_GREEN );
-			
-			// 自動走行 前進 POWER 100%
-			ev3_motor_set_power( left_motor, -100 ); 
-	    	ev3_motor_set_power( right_motor, -100 );
-		}
+		// 画面表示
+		sprintf( buff_val, "Distance：%d ", G_Distance );
+		ev3_lcd_draw_string( buff_val, 0, 10 );
 	}
 }
 
@@ -123,6 +173,7 @@ static int sonar_alert(void)
     signed int distance;
 
     distance = ev3_ultrasonic_sensor_get_distance( sonar_sensorF );
+	G_Distance = distance;
 
 	if ( distance == 0 ) { // 初期状態の調整
 		alert = 0;
