@@ -39,7 +39,7 @@ static const motor_port_t
 static int Global_Count;
 
 /* 関数プロトタイプ宣言 */
-static int sonar_alert(void);
+//static int sonar_alert(void);
 
 //*****************************************************************************
 // 概要：1000msルーチン
@@ -79,6 +79,10 @@ void main_task(intptr_t unused) {
 		/*------------------------*/
 		/* 車両状態別自動運転制御 */
 		/*------------------------*/
+		// 自動走行 前進 POWER 100%
+		ev3_motor_set_power( left_motor, -100 ); 
+	    ev3_motor_set_power( right_motor, -100 );
+/*
 		if ( sonar_alert() == 2 ) {	// 走行状態1
 			
 			// 停止
@@ -91,6 +95,7 @@ void main_task(intptr_t unused) {
 			ev3_motor_set_power( left_motor, -100 ); 
 	    	ev3_motor_set_power( right_motor, -100 );
 		}
+	*/
 	}
 }
 
@@ -99,6 +104,7 @@ void main_task(intptr_t unused) {
 //
 // 戻り値 1:レベル1、2:レベル2、3:レベル3
 //*****************************************************************************
+/*
 static int sonar_alert(void)
 {
     static int alert = 0;
@@ -117,4 +123,5 @@ static int sonar_alert(void)
 	}
     return alert;
 }
+*/
 
